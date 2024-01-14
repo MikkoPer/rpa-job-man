@@ -1,6 +1,6 @@
 import { glob } from 'fast-glob'
 import { mkdirSync, existsSync, writeFileSync, unlinkSync, renameSync, readFileSync } from 'fs'
-
+import { serializeError } from './utils.js'
 /**
  * Static class to manage jobs on disk and in memory
  */
@@ -81,12 +81,17 @@ export class JobService {
   /**
    * Returns all jobs with status, loading from file system if not already loaded
    */
-  getJobsByStatus = async (status: string) => {
+  queryJobs = async (type: string, status: string, chunkSize: ChunkSize = null) => {
     const jobs = await this.getAllJobs()
-    return jobs.filter((job) => {
+    const filtered = jobs.filter((job) => {
+      const jobType = job.type
       const currentStatus = job.statuses.slice(-1)[0]
-      return currentStatus.status === status
+      return jobType === type && currentStatus.status === status
     })
+    if (chunkSize) {
+      return filtered.slice(0, chunkSize)
+    }
+    return filtered
   }
 
   /**
@@ -117,7 +122,27 @@ export class JobService {
     job.setMeta({ archivedAt: new Date().toISOString() })
     JobService.moveJobToArchive(job)
   }
+
+  processJobs = async (jobType: string, jobStatus: string, handler: JobHandler, chunkSize: ChunkSize = null) => {
+    const jobs = await this.queryJobs(jobType, jobStatus, chunkSize)
+    let index = 0
+    let jobForError = null
+    for (const job of jobs) {
+      try {
+        jobForError = job
+        await handler(job, index, jobs)
+      } catch (err) {
+        if (!jobForError) {
+          continue
+        }
+        jobForError.error = { isError: true, message: serializeError(err)}
+      }
+    }
+  }
 }
+
+type ChunkSize = number | null
+type JobHandler = (job: Job, index?: number, jobs?: Job[]) => Promise<void>
 
 type JobStatus = {
   status: string
@@ -132,6 +157,11 @@ type LogEntry = {
   message: string
 }
 
+type SerializedError = {
+  isError: boolean
+  message: string
+}
+
 class Job {
   id: string = ''
   type: string = ''
@@ -140,6 +170,7 @@ class Job {
   meta: Record<string, any> = {}
   statuses: JobStatus[] = []
   log: LogEntry[] = []
+  error: SerializedError = { isError: false, message: '' }
 
   /**
    * @description If true, job changes will not be written to disk
@@ -154,6 +185,7 @@ class Job {
     log: LogEntry[] | null = [],
     createdAt: string | null = null,
     updatedAt: string | null = null,
+    error: SerializedError = { isError: false, message: '' }
   ) {
     const ts = new Date()
     this.id = id || ts.getTime().toString()
@@ -164,6 +196,7 @@ class Job {
     this.meta = meta || {}
     this.statuses = statuses || [{ status: 'initialized', createdAt: iso, message: '' }]
     this.log = log || []
+    this.error = error || { isError: false, message: '' }
     return this
   }
 
@@ -217,5 +250,9 @@ class Job {
       this.log.push({ ts: new Date().toISOString(), message: messages.join(' ') })
       JobService.writeJobToDisk(this)
     }
+  }
+
+  setError(error: any) {
+    this.error = { isError: true, message: serializeError(error) }
   }
 }
