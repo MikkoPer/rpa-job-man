@@ -141,8 +141,13 @@ export class JobService {
   }
 }
 
-type ChunkSize = number | null
-type JobHandler = (job: Job, index?: number, jobs?: Job[]) => Promise<void>
+export type ChunkSize = number | null
+export type JobHandlerArgs = {
+  job: Job,
+  index?: number,
+  jobs?: Job[]
+}
+export type JobHandler = (args: JobHandlerArgs) => Promise<void>
 
 type JobStatus = {
   status: string
