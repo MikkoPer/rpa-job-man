@@ -2,79 +2,119 @@ import pkg from 'fast-glob'
 const { glob } = pkg
 import { mkdirSync, existsSync, writeFileSync, unlinkSync, renameSync, readFileSync } from 'fs'
 import { serializeSircular } from './utils.js'
-import { Job } from './Job.js'
-import type { JobMeta } from './Job.js'
+import { MetaJob } from './Job.js'
+import type { MetaType, LogEntry, JobError } from './Job.js'
 import type { Task } from './Task.js'
 
-export enum WriteResult { Create, Read, Update, Delete, Fail, Skip }
-type JobResult = { job: Job }
-export type CreateJobResult = JobResult & { writeResult: WriteResult.Create | WriteResult.Skip | WriteResult.Fail }
-export type ReadJobResult = JobResult & { writeResult: WriteResult.Read | WriteResult.Fail }
-export type UpdateJobResult = JobResult & { writeResult: WriteResult.Update | WriteResult.Fail }
-export type DeleteJobResult = JobResult & { writeResult: WriteResult.Delete | WriteResult.Fail }
-export type FetchJobResult = ReadJobResult & { count: number }
+export class Job extends MetaJob {
+  service: JobService
+  constructor(
+    service: JobService,
+    id: string | null = null,
+    type: string | null = null,
+    meta: MetaType = {},
+    status?: string,
+    message?: string,
+    log?: LogEntry[],
+    createdAt?: string,
+    updatedAt?: string,
+    error?: JobError
+  ) {
+    super(id, type, meta, status, message, log, createdAt, updatedAt, error)
+    this.service = service
+  }
 
-type JobArgument = Job | { id: string, type: string }
+  setMeta(meta: MetaType) {
+    const job = super.setMeta(meta)
+    this.service.writeJobToDisk(job, true)
+    return job
+  }
+
+  setStatus(status: string, message?: string): this {
+    const job = super.setStatus(status, message)
+    this.service.writeJobToDisk(job, true)
+    return job
+  }
+
+  setError(name: string, message: string, stack: string) {
+    const job = super.setError(name, message, stack)
+    this.service.writeJobToDisk(this, true)
+    return job
+  }
+
+  clearError(): this {
+    const job = super.clearError()
+    this.service.writeJobToDisk(this, true)
+    return job
+  }
+  
+  writeToLog(messages: string | string[]) {
+    super.writeToLog(messages)
+    this.service.writeJobToDisk(this, true)
+    return this
+  }
+}
 
 /**
  * Static class to manage jobs on disk and in memory
  */
-export class Service {
+export class JobService {
   jobs: Job[] = []
 
   static rootDir: string = ''
   static archiveDir: string = ''
-  static getJobFileName = (job: JobArgument) => `${Service.rootDir}/${job.type}-${job.id}.json`
-  static getJobArchiveFileName = (job: JobArgument) => `${Service.archiveDir}/${job.type}-${job.id}.json`
+  getJobFileName = (job: Job) => `${JobService.rootDir}/${job.type}-${job.id}.json`
+  getJobArchiveFileName = (job: Job) => `${JobService.archiveDir}/${job.type}-${job.id}.json`
   /**
    * Initializes job service with given root and archive directories
    */
   constructor(rootDir: string = './jobs', archiveDir: string = './jobs/archive') {
     this.jobs = []
-    Service.rootDir = Service.rootDir || rootDir
-    Service.archiveDir = Service.archiveDir || archiveDir
-    mkdirSync(Service.rootDir, { recursive: true })
-    mkdirSync(Service.archiveDir, { recursive: true })
+    JobService.rootDir = JobService.rootDir || rootDir
+    JobService.archiveDir = JobService.archiveDir || archiveDir
+    mkdirSync(JobService.rootDir, { recursive: true })
+    mkdirSync(JobService.archiveDir, { recursive: true })
   }
 
   static setRootDir = (rootDir: string) => {
-    Service.rootDir = rootDir
-    mkdirSync(Service.rootDir, { recursive: true })
+    JobService.rootDir = rootDir
+    mkdirSync(JobService.rootDir, { recursive: true })
   }
 
   static setArchiveDir = (archiveDir: string) => {
-    Service.archiveDir = archiveDir
-    mkdirSync(Service.archiveDir, { recursive: true })
+    JobService.archiveDir = archiveDir
+    mkdirSync(JobService.archiveDir, { recursive: true })
   }
 
-  static writeJobToDisk = (job: Job, overwrite?: boolean): WriteResult.Skip | WriteResult.Update | WriteResult.Create => {
-    const fileName = Service.getJobFileName(job)
+  writeJobToDisk = (job: Job, overwrite?: boolean): 'skip' | 'update' | 'create' => {
+    const fileName = this.getJobFileName(job)
     const exists = existsSync(fileName)
     if (!overwrite && exists) {
-      return WriteResult.Skip
+
+      return 'skip'
     }
     writeFileSync(fileName, job.toJSON())
-    return exists ? WriteResult.Update :  WriteResult.Create
+    return exists
+      ? 'update'
+      : 'create'
   }
 
-  static removeFileFromDisk = (job: Job): WriteResult.Delete | WriteResult.Fail => {
-    const fileName = Service.getJobFileName(job)
+  deleteJobFromDisk = (job: Job) => {
+    const fileName = this.getJobFileName(job)
     unlinkSync(fileName)
-    return WriteResult.Delete
   }
 
-  static moveJobToArchive = (job: Job): WriteResult.Update | WriteResult.Fail => {
-    const fileName = Service.getJobFileName(job)
-    const archiveFileName = Service.getJobArchiveFileName(job)
+  moveJobToArchive = (job: Job) => {
+    const fileName = this.getJobFileName(job)
+    const archiveFileName = this.getJobArchiveFileName(job)
     renameSync(fileName, archiveFileName)
-    return WriteResult.Update
   }
 
-  createJob = async (id: string, type: string, meta: JobMeta = {}): Promise<CreateJobResult> => {
+  createJob = (id: string, type: string, meta: MetaType) => {
     const job = new Job(this, id, type,  meta)
     this.jobs.push(job)
-    const writeResult = Service.writeJobToDisk(job, true)
-    return { job, writeResult: WriteResult.Create }
+    this.writeJobToDisk(job, true)
+    return job
   }
 
   /**
@@ -86,7 +126,7 @@ export class Service {
       return this.jobs
     }
 
-    const files = await glob(`${Service.rootDir}/*.json`, { ignore: ['node_modules/**'] })
+    const files = await glob(`${JobService.rootDir}/*.json`, { ignore: ['node_modules/**'] })
     for (const file of files) {
       this.jobs.push(new Job(this).fromJSON(readFileSync(file, 'utf8')))
     }
@@ -115,19 +155,19 @@ export class Service {
    * @param {String} id
    * @returns {Job}
    */
-  getJob = async (id: string, type: string): Promise<ReadJobResult> => {
+  getJob = async (id: string, type: string): Promise<Job | null> => {
     const jobs = await this.fetchJobs(false)
     const job = jobs.find((job) => job.id === id && job.type === type)
     if (job) {
-      return { job, writeResult: WriteResult.Read } 
+      return job
     }
-    const fileName = Service.getJobFileName({ id, type })
+    const fileName = this.getJobFileName(new Job(this, id, type))
     if (existsSync(fileName)) {
       const job = new Job(this).fromJSON(readFileSync(fileName, 'utf8'))
       this.jobs.push(job)
-      return { job, writeResult: WriteResult.Read }
+      return job
     }
-    return { job: new Job(this), writeResult: WriteResult.Fail }
+    return null
   }
 
   /**
@@ -136,7 +176,7 @@ export class Service {
    */
   removeJob = (job: Job) => {
     this.jobs = this.jobs.filter((j) => j.id !== job.id)
-    Service.removeFileFromDisk(job)
+    this.deleteJobFromDisk(job)
   }
 
   /**
@@ -145,8 +185,7 @@ export class Service {
    */
   archiveJob = (job: Job) => {
     this.jobs = this.jobs.filter((j) => j.id !== job.id)
-    job.setMeta({ archivedAt: new Date().toISOString() })
-    Service.moveJobToArchive(job)
+    this.moveJobToArchive(job)
   }
 
   runTask = async (

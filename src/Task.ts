@@ -1,9 +1,9 @@
-import { Service } from './Service.js'
-import { Job } from './Job.js'
+import { JobService, Job } from './JobService.js'
 
 export type ChunkSize = number | null
 export type Task = (
-  jobService: Service,
-  job: Job, index?: number,
+  jobService: JobService,
+  job: Job,
+  index?: number,
   jobs?: Job[]
   ) => Promise<void>
