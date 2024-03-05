@@ -110,10 +110,10 @@ export class JobService {
     renameSync(fileName, archiveFileName)
   }
 
-  createJob = (id: string, type: string, meta: MetaType) => {
+  createJob = (id: string, type: string, meta: MetaType, overwrite: boolean = false) => {
     const job = new Job(this, id, type,  meta)
     this.jobs.push(job)
-    this.writeJobToDisk(job, true)
+    this.writeJobToDisk(job, overwrite)
     return job
   }
 
