@@ -17,7 +17,7 @@ const generator: Task = async (service, job) => {
     let child = await service.getJob(id, type)
     console.log('child exists', child)
     if (!child) {
-      child = service.createJob(id, type, { index: i } )
+      child = service.createJob({ type, id, meta: { index: i }})
     }
     child.writeToLog(`Created child ${child.type}-${child.id} by job ${job.type}-${job.id}`)
   }
@@ -54,7 +54,7 @@ type Main = {
 
 async function main() {
   const service = new JobService()
-  const job = service.createJob('1', 'main', { count: 5 })
+  const job = service.createJob({ type: 'main', id: '1', meta: { count: 5 }})
   job.writeToLog('Created main job')
   await service.runTask('main', 'initialized', generator)
   await service.runTask('job', 'initialized', process, 3)

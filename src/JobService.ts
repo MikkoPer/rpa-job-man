@@ -3,24 +3,16 @@ const { glob } = pkg
 import { mkdirSync, existsSync, writeFileSync, unlinkSync, renameSync, readFileSync } from 'fs'
 import { serializeSircular } from './utils.js'
 import { MetaJob } from './Job.js'
-import type { MetaType, LogEntry, JobError } from './Job.js'
+import type { MetaType, MetaJobInit } from './Job.js'
 import type { Task } from './Task.js'
 
 export class Job extends MetaJob {
   service: JobService
   constructor(
     service: JobService,
-    id: string | null = null,
-    type: string | null = null,
-    meta: MetaType = {},
-    status?: string,
-    message?: string,
-    log?: LogEntry[],
-    createdAt?: string,
-    updatedAt?: string,
-    error?: JobError
+    init?: MetaJobInit
   ) {
-    super(id, type, meta, status, message, log, createdAt, updatedAt, error)
+    super(init || {})
     this.service = service
   }
 
@@ -110,8 +102,8 @@ export class JobService {
     renameSync(fileName, archiveFileName)
   }
 
-  createJob = (id: string, type: string, meta: MetaType, overwrite: boolean = false) => {
-    const job = new Job(this, id, type,  meta)
+  createJob = (init: MetaJobInit, overwrite: boolean = false) => {
+    const job = new Job(this, init)
     this.jobs.push(job)
     this.writeJobToDisk(job, overwrite)
     return job
@@ -161,7 +153,7 @@ export class JobService {
     if (job) {
       return job
     }
-    const fileName = this.getJobFileName(new Job(this, id, type))
+    const fileName = this.getJobFileName(new Job(this, { type, id }))
     if (existsSync(fileName)) {
       const job = new Job(this).fromJSON(readFileSync(fileName, 'utf8'))
       this.jobs.push(job)

@@ -15,17 +15,28 @@ export type JobError = {
 };
 export type NoError = null;
 export type MetaType = Record<string, any>;
+export type MetaJobInit = {
+    type?: string;
+    id?: string;
+    meta?: MetaType;
+    status?: string;
+    message?: string;
+    log?: LogEntry[];
+    createdAt?: string;
+    updatedAt?: string;
+    error?: JobError;
+};
 export declare class MetaJob {
-    id: string;
     type: string;
-    createdAt: string;
-    updatedAt: string;
+    id: string;
     meta: MetaType;
     status: String;
     message: String;
     log: LogEntry[];
+    createdAt: string;
+    updatedAt: string;
     error: JobError | NoError;
-    constructor(id?: string | null, type?: string | null, meta?: MetaType, status?: string, message?: string, log?: LogEntry[], createdAt?: string, updatedAt?: string, error?: JobError);
+    constructor(init: MetaJobInit);
     toJSON(): string;
     fromJSON(json: string): this;
     getId(): string;

@@ -6,35 +6,38 @@ export type NoError = null
 
 export type MetaType = Record<string, any>
 
+export type MetaJobInit = {
+  type?: string,
+  id?: string,
+  meta?: MetaType,
+  status?: string,
+  message?: string,
+  log?: LogEntry[],
+  createdAt?: string,
+  updatedAt?: string,
+  error?: JobError
+}
+
 export class MetaJob {
-  id: string = ''
   type: string = ''
-  createdAt: string = new Date().toISOString()
-  updatedAt: string = new Date().toISOString()
+  id: string = ''
   meta: MetaType = {}
   status: String = 'initialized'
   message: String = ''
   log: LogEntry[] = []
+  createdAt: string = new Date().toISOString()
+  updatedAt: string = new Date().toISOString()
   error: JobError | NoError
 
-  constructor(
-    id: string | null = null,
-    type: string | null = null,
-    meta: MetaType = {},
-    status?: string,
-    message?: string,
-    log?: LogEntry[],
-    createdAt?: string,
-    updatedAt?: string,
-    error?: JobError
-  ) {
+  constructor(init: MetaJobInit) {
+    const { type, id, meta, status, message, log, createdAt, updatedAt, error } = init
     const ts = new Date()
-    this.id = id || ts.getTime().toString()
     this.type = type || 'job'
+    this.id = id || ts.getTime().toString()
     const iso = ts.toISOString()
     this.createdAt = createdAt || iso
     this.updatedAt = updatedAt || iso
-    this.meta = meta
+    this.meta = meta || {}
     this.status = status || 'initialized'
     this.message = message || ''
     this.log = log || []

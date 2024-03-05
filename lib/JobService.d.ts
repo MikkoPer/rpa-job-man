@@ -1,9 +1,9 @@
 import { MetaJob } from './Job.js';
-import type { MetaType, LogEntry, JobError } from './Job.js';
+import type { MetaType, MetaJobInit } from './Job.js';
 import type { Task } from './Task.js';
 export declare class Job extends MetaJob {
     service: JobService;
-    constructor(service: JobService, id?: string | null, type?: string | null, meta?: MetaType, status?: string, message?: string, log?: LogEntry[], createdAt?: string, updatedAt?: string, error?: JobError);
+    constructor(service: JobService, init?: MetaJobInit);
     setMeta(meta: MetaType): this;
     setStatus(status: string, message?: string): this;
     setError(name: string, message: string, stack: string): this;
@@ -28,7 +28,7 @@ export declare class JobService {
     writeJobToDisk: (job: Job, overwrite?: boolean) => 'skip' | 'update' | 'create';
     deleteJobFromDisk: (job: Job) => void;
     moveJobToArchive: (job: Job) => void;
-    createJob: (id: string, type: string, meta: MetaType, overwrite?: boolean) => Job;
+    createJob: (init: MetaJobInit, overwrite?: boolean) => Job;
     /**
      * Returns all jobs, loading from file system if not already loaded
      * @param {Boolean} updateCache
