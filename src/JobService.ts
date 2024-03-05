@@ -122,7 +122,7 @@ export class JobService {
     for (const file of files) {
       this.jobs.push(new Job(this).fromJSON(readFileSync(file, 'utf8')))
     }
-    this.jobs.sort((a, b) => a.id.localeCompare(b.id))
+    this.jobs.sort((a, b) => String(a.id).localeCompare(String(b.id)))
     return this.jobs
   }
 

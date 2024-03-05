@@ -6,7 +6,11 @@
   "type": "module",
   "scripts": {
     "test": "tsc && node ./lib/tests/index.js",
-    "pack": "tsc && npm pack"
+    "pack": "tsc && npx rollup ./lib/index.js --file ./lib/index.cjs --format cjs && npm pack"
+  },
+  "exports": {
+    "import": "./lib/index.js",
+    "require": "./lib/index.cjs"
   },
   "author": "",
   "license": "MIT",
@@ -16,6 +20,7 @@
     "lokijs": "^1.5.12"
   },
   "devDependencies": {
-    "@types/node": "^20.11.0"
+    "@types/node": "^20.11.0",
+    "rollup": "^4.12.0"
   }
 }
