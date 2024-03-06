@@ -188,7 +188,7 @@ export class JobService {
     ) => {
     const jobs = await this.queryJobs(jobType, jobStatus, chunkSize)
     let index = 0
-    let jobForError = null
+    let jobForError: Job | null = null
     for (const job of jobs) {
       try {
         jobForError = job

@@ -4,9 +4,9 @@ import type { Task } from './Task.js';
 export declare class Job extends MetaJob {
     service: JobService;
     constructor(service: JobService, init?: MetaJobInit);
-    setMeta(meta: MetaType): this;
+    setMeta(meta: MetaType): any;
     setStatus(status: string, message?: string): this;
-    setError(name: string, message: string, stack: string): this;
+    setError(name: string, message: string, stack: string): any;
     clearError(): this;
     writeToLog(messages: string | string[]): this;
 }

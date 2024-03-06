@@ -4,6 +4,6 @@ export type ChunkSize = number | null
 export type Task = (
   jobService: JobService,
   job: Job,
-  index?: number,
-  jobs?: Job[]
+  index: number,
+  jobs: Job[]
   ) => Promise<void>
