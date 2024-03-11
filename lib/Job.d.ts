@@ -26,10 +26,10 @@ export type MetaJobInit = {
     updatedAt?: string;
     error?: JobError;
 };
-export declare class MetaJob<T> {
+export declare class MetaJob {
     type: string;
     id: string;
-    meta: T | MetaType;
+    meta: MetaType;
     status: String;
     message: String;
     log: LogEntry[];
@@ -43,7 +43,7 @@ export declare class MetaJob<T> {
     getType(): string;
     getStatus(): String;
     getStatusMessage(): String;
-    getMeta(): MetaType | T;
+    getMeta(): MetaType;
     /**
      * Updates jobs status with message and writes to disk
      */

@@ -147,7 +147,7 @@ export class JobService {
    * @param {String} id
    * @returns {Job}
    */
-  getJob = async (id: string, type: string): Promise<Job | null> => {
+  getJob = async (type: string, id: string): Promise<Job | null> => {
     const jobs = await this.fetchJobs(false)
     const job = jobs.find((job) => job.id === id && job.type === type)
     if (job) {

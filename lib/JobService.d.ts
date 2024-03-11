@@ -4,9 +4,9 @@ import type { Task } from './Task.js';
 export declare class Job extends MetaJob {
     service: JobService;
     constructor(service: JobService, init?: MetaJobInit);
-    setMeta(meta: MetaType): any;
+    setMeta(meta: MetaType): this;
     setStatus(status: string, message?: string): this;
-    setError(name: string, message: string, stack: string): any;
+    setError(name: string, message: string, stack: string): this;
     clearError(): this;
     writeToLog(messages: string | string[]): this;
 }
@@ -43,7 +43,7 @@ export declare class JobService {
      * @param {String} id
      * @returns {Job}
      */
-    getJob: (id: string, type: string) => Promise<Job | null>;
+    getJob: (type: string, id: string) => Promise<Job | null>;
     /**
      * Removes job from disk
      * @param {Job} job
