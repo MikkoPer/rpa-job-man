@@ -15,9 +15,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@types/lokijs": "^1.5.14",
-    "fast-glob": "^3.3.2",
-    "lokijs": "^1.5.12"
+    "fast-glob": "^3.3.2"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",

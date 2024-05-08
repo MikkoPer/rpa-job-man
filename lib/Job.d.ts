@@ -30,8 +30,8 @@ export declare class MetaJob {
     type: string;
     id: string;
     meta: MetaType;
-    status: String;
-    message: String;
+    status: string;
+    message: string;
     log: LogEntry[];
     createdAt: string;
     updatedAt: string;
@@ -41,8 +41,8 @@ export declare class MetaJob {
     fromJSON(json: string): this;
     getId(): string;
     getType(): string;
-    getStatus(): String;
-    getStatusMessage(): String;
+    getStatus(): string;
+    getStatusMessage(): string;
     getMeta(): MetaType;
     /**
      * Updates jobs status with message and writes to disk
@@ -55,7 +55,8 @@ export declare class MetaJob {
     /**
      * Writes to jobs log and updates job on disk
      */
-    writeToLog(messages: string | string[]): void;
+    writeToLog(...args: any[]): void;
+    writeToLogSilent(...args: any[]): void;
     setError(name: string, message: string, stack: string): this;
     clearError(): this;
 }

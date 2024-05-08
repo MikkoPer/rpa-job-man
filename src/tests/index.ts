@@ -36,28 +36,24 @@ const archive: Task = async (service, job) => {
 }
 
 const check: Task = async (service, job) => {
-  const jobs = await service.queryJobs('job', 'complete')
+  const jobs = await service.queryJobs({ type: 'job', status: 'complete' })
   const meta = job.getMeta()
   if (meta.count === jobs.length) {
     job.writeToLog('All jobs complete')
     job.setStatus('complete', 'All jobs complete')
-    await service.runTask('job', 'complete', archive)
+    await service.runTask({ type: 'job', status: 'complete', task: archive })
     service.archiveJob(job)
   } else {
     throw new Error('Not all jobs complete')
   }
 }
 
-type Main = {
-  count: number
-}
-
 async function main() {
   const service = new JobService()
   const job = service.createJob({ type: 'main', id: '1', meta: { count: 5 }})
   job.writeToLog('Created main job')
-  await service.runTask('main', 'initialized', generator)
-  await service.runTask('job', 'initialized', process, 3)
-  await service.runTask('main', 'initialized', check)
+  await service.runTask({ type: 'main', status: 'initialized', task: generator })
+  await service.runTask({ type: 'job', status: 'initialized', task: process, chunkSize: 3 })
+  await service.runTask({ type: 'main', status: 'initialized', task: check })
 }
 main()

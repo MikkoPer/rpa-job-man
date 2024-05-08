@@ -40,8 +40,8 @@ export class Job extends MetaJob {
     return job
   }
   
-  writeToLog(messages: string | string[]) {
-    super.writeToLog(messages)
+  writeToLog(message: string, silent: boolean = false) {
+    super.writeToLog(message, silent)
     this.service.writeJobToDisk(this, true)
     return this
   }
@@ -78,17 +78,14 @@ export class JobService {
     mkdirSync(JobService.archiveDir, { recursive: true })
   }
 
-  writeJobToDisk = (job: Job, overwrite?: boolean): 'skip' | 'update' | 'create' => {
+  writeJobToDisk = (job: Job, overwrite?: boolean): Job => {
     const fileName = this.getJobFileName(job)
     const exists = existsSync(fileName)
     if (!overwrite && exists) {
-
-      return 'skip'
+      return job
     }
     writeFileSync(fileName, job.toJSON())
-    return exists
-      ? 'update'
-      : 'create'
+    return job
   }
 
   deleteJobFromDisk = (job: Job) => {
@@ -103,6 +100,10 @@ export class JobService {
   }
 
   createJob = (init: MetaJobInit, overwrite: boolean = false) => {
+    const existing = this.jobs.find((job) => job.id === init.id && job.type === init.type)
+    if (!overwrite && existing) {
+      return existing
+    }
     const job = new Job(this, init)
     this.jobs.push(job)
     this.writeJobToDisk(job, overwrite)
@@ -113,11 +114,11 @@ export class JobService {
    * Returns all jobs, loading from file system if not already loaded
    * @param {Boolean} updateCache
    */
-  fetchJobs = async (updateCache: false) => {
+  fetchJobs = async (updateCache: boolean = true) => {
     if (this.jobs.length && !updateCache) {
       return this.jobs
     }
-
+    this.jobs = []
     const files = await glob(`${JobService.rootDir}/*.json`, { ignore: ['node_modules/**'] })
     for (const file of files) {
       this.jobs.push(new Job(this).fromJSON(readFileSync(file, 'utf8')))
@@ -129,12 +130,35 @@ export class JobService {
   /**
    * Returns all jobs matching the type and status, loading from file system if not already loaded
    */
-  queryJobs = async (type: string, status: string, chunkSize?: number) => {
-    const jobs = await this.fetchJobs(false)
+  queryJobs = async (
+    parms: {
+      type?: string | Array<string>,
+      status?: string | Array<string>,
+      chunkSize?: number
+    }) => {
+    const { type, status, chunkSize } = parms
+    const jobs = await this.fetchJobs()
     const filtered = jobs.filter((job) => {
       const jobType = job.type
-      const currentStatus = job.getStatus()
-      return jobType === type && currentStatus === status
+      let doesJobTypeMatch = false
+      if (!type) {
+        doesJobTypeMatch = true
+      } else if (Array.isArray(type)) {
+        doesJobTypeMatch = type.includes(jobType)
+      } else {
+        doesJobTypeMatch = jobType === type
+      }
+
+      const jobStatus = job.getStatus()
+      let doesJobStatusMatch = false
+      if (!status) {
+        doesJobStatusMatch = true
+      } else if (Array.isArray(status)) {
+        doesJobStatusMatch = status.includes(jobStatus)
+      } else {
+        doesJobStatusMatch = jobStatus === status
+      }
+      return doesJobTypeMatch && doesJobStatusMatch
     })
     if (chunkSize) {
       return filtered.slice(0, chunkSize)
@@ -181,12 +205,14 @@ export class JobService {
   }
 
   runTask = async (
-    jobType: string,
-    jobStatus: string,
-    task: Task,
-    chunkSize?: number
-    ) => {
-    const jobs = await this.queryJobs(jobType, jobStatus, chunkSize)
+    parms: {
+      type?: string | Array<string>,
+      status?: string | Array<string>,
+      task: Task,
+      chunkSize?: number
+    }) => {
+    const { type, status, task, chunkSize } = parms
+    const jobs = await this.queryJobs({ type, status, chunkSize })
     let index = 0
     let jobForError: Job | null = null
     for (const job of jobs) {

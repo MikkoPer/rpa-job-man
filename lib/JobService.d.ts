@@ -8,7 +8,7 @@ export declare class Job extends MetaJob {
     setStatus(status: string, message?: string): this;
     setError(name: string, message: string, stack: string): this;
     clearError(): this;
-    writeToLog(messages: string | string[]): this;
+    writeToLog(message: string, silent?: boolean): this;
 }
 /**
  * Static class to manage jobs on disk and in memory
@@ -25,7 +25,7 @@ export declare class JobService {
     constructor(rootDir?: string, archiveDir?: string);
     static setRootDir: (rootDir: string) => void;
     static setArchiveDir: (archiveDir: string) => void;
-    writeJobToDisk: (job: Job, overwrite?: boolean) => 'skip' | 'update' | 'create';
+    writeJobToDisk: (job: Job, overwrite?: boolean) => Job;
     deleteJobFromDisk: (job: Job) => void;
     moveJobToArchive: (job: Job) => void;
     createJob: (init: MetaJobInit, overwrite?: boolean) => Job;
@@ -33,11 +33,15 @@ export declare class JobService {
      * Returns all jobs, loading from file system if not already loaded
      * @param {Boolean} updateCache
      */
-    fetchJobs: (updateCache: false) => Promise<Job[]>;
+    fetchJobs: (updateCache?: boolean) => Promise<Job[]>;
     /**
      * Returns all jobs matching the type and status, loading from file system if not already loaded
      */
-    queryJobs: (type: string, status: string, chunkSize?: number) => Promise<Job[]>;
+    queryJobs: (parms: {
+        type?: string | Array<string>;
+        status?: string | Array<string>;
+        chunkSize?: number;
+    }) => Promise<Job[]>;
     /**
      * Returns job by type and id, loading from file system if not already loaded
      * @param {String} id
@@ -54,6 +58,11 @@ export declare class JobService {
      * @param {Job} job
      */
     archiveJob: (job: Job) => void;
-    runTask: (jobType: string, jobStatus: string, task: Task, chunkSize?: number) => Promise<void>;
+    runTask: (parms: {
+        type?: string | Array<string>;
+        status?: string | Array<string>;
+        task: Task;
+        chunkSize?: number;
+    }) => Promise<void>;
 }
 //# sourceMappingURL=JobService.d.ts.map

@@ -22,8 +22,8 @@ export class MetaJob {
   type: string = ''
   id: string = ''
   meta: MetaType = {}
-  status: String = 'initialized'
-  message: String = ''
+  status: string = 'initialized'
+  message: string = ''
   log: LogEntry[] = []
   createdAt: string = new Date().toISOString()
   updatedAt: string = new Date().toISOString()
@@ -117,10 +117,14 @@ export class MetaJob {
   /**
    * Writes to jobs log and updates job on disk
    */
-  writeToLog(messages: string | string[]) {
-    console.log(...arguments)
-    messages = Object.values(arguments)
-    this.log.push({ ts: new Date().toISOString(), message: messages.join(' ') })
+  writeToLog(...args: any[]) {
+    console.log(...args)
+    this.writeToLogSilent(...args)
+  }
+
+  writeToLogSilent(...args: any[]) {
+    const message = args.join(' ')
+    this.log.push({ ts: new Date().toISOString(), message })
   }
 
   setError(name: string, message: string, stack: string) {
