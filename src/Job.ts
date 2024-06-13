@@ -68,6 +68,7 @@ export class MetaJob {
     this.meta = job.meta || {}
     this.status = job.status || 'initialized'
     this.log = job.log || []
+    this.error = job.error || null
     return this
   }
 

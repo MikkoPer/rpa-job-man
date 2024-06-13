@@ -48,6 +48,12 @@ const check: Task = async (service, job) => {
   }
 }
 
+const isErrors: Task = async (service, job) => {
+  if (job.error) {
+    console.log('ALERT!!! We have an error', job.error)
+  }
+}
+
 async function main() {
   const service = new JobService()
   const job = service.createJob({ type: 'main', id: '1', meta: { count: 5 }})
@@ -55,5 +61,6 @@ async function main() {
   await service.runTask({ type: 'main', status: 'initialized', task: generator })
   await service.runTask({ type: 'job', status: 'initialized', task: process, chunkSize: 3 })
   await service.runTask({ type: 'main', status: 'initialized', task: check })
+  await service.runTask({ task: isErrors })
 }
 main()

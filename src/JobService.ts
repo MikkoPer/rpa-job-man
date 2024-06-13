@@ -40,10 +40,15 @@ export class Job extends MetaJob {
     return job
   }
   
-  writeToLog(message: string, silent: boolean = false) {
-    super.writeToLog(message, silent)
+  writeToLog(message: string) {
+    super.writeToLog(message)
     this.service.writeJobToDisk(this, true)
     return this
+  }
+
+  writeToLogSilent(...args: any[]): void {
+    super.writeToLogSilent(...args)
+    this.service.writeJobToDisk(this, true)
   }
 }
 
@@ -216,6 +221,9 @@ export class JobService {
     let index = 0
     let jobForError: Job | null = null
     for (const job of jobs) {
+      if (!job) {
+        throw new Error('Job not found')
+      }
       try {
         jobForError = job
         await task(this, job, index, jobs)

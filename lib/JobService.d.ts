@@ -8,7 +8,8 @@ export declare class Job extends MetaJob {
     setStatus(status: string, message?: string): this;
     setError(name: string, message: string, stack: string): this;
     clearError(): this;
-    writeToLog(message: string, silent?: boolean): this;
+    writeToLog(message: string): this;
+    writeToLogSilent(...args: any[]): void;
 }
 /**
  * Static class to manage jobs on disk and in memory
