@@ -46,7 +46,7 @@ export class MetaJob {
   }
 
   toJSON(): string {
-    const { id, type, createdAt, updatedAt, meta, status, log, error } = this
+    const { id, type, createdAt, updatedAt, meta, status, message, log, error } = this
     return JSON.stringify({
       id,
       type,
@@ -54,6 +54,7 @@ export class MetaJob {
       updatedAt,
       meta,
       status,
+      message,
       log,
       error,
     })
