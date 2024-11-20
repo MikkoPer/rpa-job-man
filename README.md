@@ -15,5 +15,6 @@ Is used to manage Jobs on disk and in memory. Is responsible of creating, queryi
 
 Is used to manage the status, state and loggin of a single job.
 
-### Initialization
+# Building
 
+Run `npm run pack` to build the project. The package will be created as jobservice-version.tgz.
