@@ -1,2 +1,2 @@
-export declare const serializeSircular: (error: any) => string;
+export declare const serializeCircular: (error: any) => string;
 //# sourceMappingURL=utils.d.ts.map

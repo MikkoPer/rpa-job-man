@@ -1,7 +1,7 @@
 import pkg from 'fast-glob'
 const { glob } = pkg
 import { mkdirSync, existsSync, writeFileSync, unlinkSync, renameSync, readFileSync } from 'fs'
-import { serializeSircular } from './utils.js'
+import { serializeCircular } from './utils.js'
 import { MetaJob } from './Job.js'
 import type { MetaType, MetaJobInit } from './Job.js'
 import type { Task } from './Task.js'
@@ -209,6 +209,35 @@ export class JobService {
     this.moveJobToArchive(job)
   }
 
+  runSingleTask = async (parms: {
+    id?: string,
+    type?: string,
+    status?: string,
+    meta?: MetaType,
+    task: Task
+  }) => {
+    const { id, type, meta, task } = parms
+    const job = new Job(this, { id, type, meta })
+    try {
+      await task(this, job, 0, [])
+    } catch(err) {
+      console.log(err)
+      if (err instanceof Error) {
+        job.setError(
+          err.name,
+          err.message,
+          serializeCircular(err.stack)
+        )
+      } else {
+        job.setError(
+          'UnknownError',
+          serializeCircular(err),
+          ''
+        )
+      }
+    }
+  }
+
   runTask = async (
     parms: {
       type?: string | Array<string>,
@@ -236,12 +265,12 @@ export class JobService {
           jobForError.setError(
             err.name,
             err.message,
-            serializeSircular(err.stack)
+            serializeCircular(err.stack)
           )
         } else {
           jobForError.setError(
             'UnknownError',
-            serializeSircular(err),
+            serializeCircular(err),
             ''
           )
         }

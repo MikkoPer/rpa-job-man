@@ -59,6 +59,13 @@ export declare class JobService {
      * @param {Job} job
      */
     archiveJob: (job: Job) => void;
+    runSingleTask: (parms: {
+        id?: string;
+        type?: string;
+        status?: string;
+        meta?: MetaType;
+        task: Task;
+    }) => Promise<void>;
     runTask: (parms: {
         type?: string | Array<string>;
         status?: string | Array<string>;

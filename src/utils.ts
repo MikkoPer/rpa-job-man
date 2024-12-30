@@ -1,4 +1,4 @@
-export const serializeSircular = (error: any) => {
+export const serializeCircular = (error: any) => {
   const seen = new WeakSet()
   return JSON.stringify(error, (key, value) => {
     if (value !== null && typeof value === 'object') {

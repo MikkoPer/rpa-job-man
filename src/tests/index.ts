@@ -56,9 +56,7 @@ const isErrors: Task = async (service, job) => {
 
 async function main() {
   const service = new JobService()
-  const job = service.createJob({ type: 'main', id: '1', meta: { count: 5 }})
-  job.writeToLog('Created main job')
-  await service.runTask({ type: 'main', status: 'initialized', task: generator })
+  service.runSingleTask({ type: 'main', id: '1', meta: { count: 5 }, task: generator})
   await service.runTask({ type: 'job', status: 'initialized', task: process, chunkSize: 3 })
   await service.runTask({ type: 'main', status: 'initialized', task: check })
   await service.runTask({ task: isErrors })

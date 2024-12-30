@@ -17,4 +17,6 @@ Is used to manage the status, state and loggin of a single job.
 
 # Building
 
-Run `npm run pack` to build the project. The package will be created as jobservice-version.tgz.
+Bump version by calling `npm version <major|minor|patch>`. This will update the package.json and create a git tag.
+
+Run `npm run pack` to build the project. The package will be created as jobservice-version.tgz
