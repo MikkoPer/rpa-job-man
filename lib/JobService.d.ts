@@ -65,12 +65,21 @@ export declare class JobService {
         status?: string;
         meta?: MetaType;
         task: Task;
-    }) => Promise<void>;
+    }) => Promise<{
+        passed: Job[];
+        failed: never[];
+    } | {
+        passed: never[];
+        failed: Job[];
+    }>;
     runTask: (parms: {
         type?: string | Array<string>;
         status?: string | Array<string>;
         task: Task;
         chunkSize?: number;
-    }) => Promise<void>;
+    }) => Promise<{
+        passed: Job[];
+        failed: Job[];
+    }>;
 }
 //# sourceMappingURL=JobService.d.ts.map

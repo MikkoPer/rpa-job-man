@@ -220,6 +220,7 @@ export class JobService {
     const job = new Job(this, { id, type, meta })
     try {
       await task(this, job, 0, [])
+      return { passed: [job], failed: [] }
     } catch(err) {
       console.log(err)
       if (err instanceof Error) {
@@ -235,6 +236,7 @@ export class JobService {
           ''
         )
       }
+      return { passed: [], failed: [job] }
     }
   }
 
@@ -245,36 +247,33 @@ export class JobService {
       task: Task,
       chunkSize?: number
     }) => {
+    const passed: Job[] = []
+    const failed: Job[] = []
     const { type, status, task, chunkSize } = parms
     const jobs = await this.queryJobs({ type, status, chunkSize })
     let index = 0
-    let jobForError: Job | null = null
     for (const job of jobs) {
-      if (!job) {
-        throw new Error('Job not found')
-      }
       try {
-        jobForError = job
         await task(this, job, index, jobs)
+        passed.push(job)
       } catch (err) {
         console.log(err)
-        if (!jobForError) {
-          continue
-        }
         if (err instanceof Error) {
-          jobForError.setError(
+          job.setError(
             err.name,
             err.message,
             serializeCircular(err.stack)
           )
         } else {
-          jobForError.setError(
+          job.setError(
             'UnknownError',
             serializeCircular(err),
             ''
           )
         }
+        failed.push(job)
       }
-    }
+    } // END iterate over jobs
+    return { passed, failed }
   }
 }
